@@ -1,0 +1,31 @@
+/target
+/.helix
+/result
+/.direnv
+# Devenv
+.devenv*
+devenv.local.nix
+
+**/dist/**
+
+# insta snapshots
+*.pending-snap
+*.snap.new
+
+# setup
+/.helix
+/.vscode
+
+**/tmp**
+**/temp**.bin/
+node_modules/
+/.bin/
+/.local-cache/
+/.sass-cache/
+/.test-results/
+/test-results/
+/playwright-report/
+
+# misc
+.DS_Store
+*.pem

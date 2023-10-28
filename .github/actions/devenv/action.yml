@@ -1,0 +1,140 @@
+name: devenv
+description: "Setup development environment with devenv"
+inputs:
+    github-token:
+        description: Provide a github token
+        required: true
+    nix-cache:
+        description: The location of the nix cache
+        required: true
+
+runs:
+    using: composite
+    steps:
+        # fnm isn't working on the ci server open an issue later
+        - name: setup node
+          uses: actions/setup-node@v3
+          with:
+              node-version-file: ".node-version"
+
+        - name: setup pnpm
+          uses: pnpm/action-setup@v2
+          with:
+              run_install: false
+
+        - name: cache nix store
+          uses: actions/cache@v3
+          id: nix-cache
+          with:
+              path: ${{ inputs.nix-cache }}
+              key: ${{ runner.os }}-nix-cache-${{ hashFiles('**/devenv.nix', '**/devenv.yaml', '**/devenv.lock') }}
+              restore-keys: ${{ runner.os }}-nix-cache-
+
+        - name: install nix
+          uses: cachix/install-nix-action@v22
+          with:
+              github_access_token: ${{ inputs.github-token }}
+
+        - name: import nix store cache
+          if: steps.nix-cache.outputs.cache-hit == 'true'
+          run: nix-store --import < ${{ inputs.nix-cache }}
+          shell: bash
+
+        - name: enable cachix
+          uses: cachix/cachix-action@v12
+          with:
+              name: devenv
+
+        - name: install devenv.sh
+          run: |
+              cachix use devenv
+              nix profile install --accept-flake-config github:cachix/devenv/v0.6.3
+          shell: bash
+
+        - name: build developer environment
+          run: devenv ci
+          shell: bash
+
+        - name: update path with devenv
+          run: devenv shell setup:ci
+          shell: bash
+
+        - name: export nix store cache
+          if: steps.nix-cache.outputs.cache-hit != 'true'
+          run: nix-store --export $(find /nix/store -maxdepth 1 -name '*-*')> ${{ inputs.nix-cache }}
+          shell: bash
+
+        - name: cache rust dependencies
+          uses: Swatinem/rust-cache@v2
+          with:
+              key: ${{ runner.os }}
+
+        - name: setup cargo bin cache
+          uses: actions/cache@v3
+          with:
+              path: ./bin
+              key: ${{ runner.os }}-cargo-bin-${{ hashFiles('rust-toolchain.toml') }}
+              restore-keys: |
+                  ${{ runner.os }}-cargo-bin-
+
+        - name: setup .local-cache
+          uses: actions/cache@v3
+          with:
+              path: ./.local-cache
+              key: ${{ runner.os }}-local-cache-${{ hashFiles('setup/cache-versions.json') }}
+              restore-keys: |
+                  ${{ runner.os }}-local-cache-
+
+        - name: get pnpm store directory
+          id: pnpm-cache
+          run: echo "store=$(pnpm store path)" >> $GITHUB_OUTPUT
+          shell: bash
+
+        - name: setup pnpm cache
+          uses: actions/cache@v3
+          with:
+              path: ${{ steps.pnpm-cache.outputs.store }}
+              key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+              restore-keys: |
+                  ${{ runner.os }}-pnpm-store-
+
+        - name: install pnpm
+          run: pnpm install
+          shell: bash
+
+        - name: install solana
+          run: install:solana
+          shell: bash
+
+        - name: install cargo binaries
+          run: install:cargo:bin
+          shell: bash
+
+        - name: setup prisma
+          run: prisma generate
+          shell: bash
+
+        - name: get installed playwright version
+          id: playwright-version
+          run: |
+              TEMP_VERSION=`pnpm playwright -V | sed -e "s/Version //"`
+              echo "PLAYWRIGHT_VERSION=$TEMP_VERSION" >> $GITHUB_ENV
+          shell: bash
+
+        - name: cache playwright binaries
+          uses: actions/cache@v3
+          id: playwright-cache
+          with:
+              path: |
+                  ~/.cache/ms-playwright
+              key: ${{ runner.os }}-playwright-${{ env.PLAYWRIGHT_VERSION }}
+
+        - name: install playwright browsers and dependencies
+          run: pnpm playwright install --with-deps
+          if: steps.playwright-cache.outputs.cache-hit != 'true'
+          shell: bash
+
+        - name: install playwright dependencies
+          run: pnpm playwright install-deps
+          if: steps.playwright-cache.outputs.cache-hit == 'true'
+          shell: bash

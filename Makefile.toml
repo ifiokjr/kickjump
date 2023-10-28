@@ -1,0 +1,41 @@
+[tasks."watch:kickjump_com"]
+run_task = { name = ["watch:kickjump_com:leptos", "watch:kickjump_com:tailwind"], parallel = true, fork = true }
+
+[tasks."watch:kickjump_com:leptos"]
+dependencies = ["build:kickjump_com:tailwind"]
+command = "cargo"
+args = [
+	"leptos",
+	"watch",
+	"--hot-reload",
+	"--project",
+	"kickjump_com",
+]
+
+[tasks."watch:kickjump_com:tailwind"]
+command = "pnpm"
+args = [
+	"tailwindcss",
+	"-i",
+	"./apps/kickjump_com/style/input.css",
+	"-o",
+	"./apps/kickjump_com/style/output.css",
+	"--config",
+	"./apps/kickjump_com/tailwind.config.ts",
+	"--watch",
+]
+
+[tasks."build:kickjump_com:tailwind"]
+command = "pnpm"
+args = [
+	"tailwindcss",
+	"-i",
+	"./apps/kickjump_com/style/input.css",
+	"-o",
+	"./apps/kickjump_com/style/output.css",
+	"--config",
+	"./apps/kickjump_com/tailwind.config.ts",
+]
+
+[config]
+default_to_workspace = false

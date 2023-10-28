@@ -1,0 +1,3 @@
+[alias]
+prisma = "run -p prisma_cli --bin prisma --"
+leptos = ["bin", "cargo-leptos"]
