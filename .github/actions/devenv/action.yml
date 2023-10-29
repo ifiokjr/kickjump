@@ -69,15 +69,15 @@ runs:
           with:
               key: ${{ runner.os }}
 
-        - name: setup cargo bin cache
+        - name: cache cargo binaries
           uses: actions/cache@v3
           with:
-              path: ./bin
+              path: ./.bin
               key: ${{ runner.os }}-cargo-bin-${{ hashFiles('rust-toolchain.toml') }}
               restore-keys: |
                   ${{ runner.os }}-cargo-bin-
 
-        - name: setup .local-cache
+        - name: cache local binaries
           uses: actions/cache@v3
           with:
               path: ./.local-cache
@@ -90,7 +90,7 @@ runs:
           run: echo "store=$(pnpm store path)" >> $GITHUB_OUTPUT
           shell: bash
 
-        - name: setup pnpm cache
+        - name: cache pnpm
           uses: actions/cache@v3
           with:
               path: ${{ steps.pnpm-cache.outputs.store }}
@@ -112,29 +112,4 @@ runs:
 
         - name: setup prisma
           run: prisma generate
-          shell: bash
-
-        - name: get installed playwright version
-          id: playwright-version
-          run: |
-              TEMP_VERSION=`pnpm playwright -V | sed -e "s/Version //"`
-              echo "PLAYWRIGHT_VERSION=$TEMP_VERSION" >> $GITHUB_ENV
-          shell: bash
-
-        - name: cache playwright binaries
-          uses: actions/cache@v3
-          id: playwright-cache
-          with:
-              path: |
-                  ~/.cache/ms-playwright
-              key: ${{ runner.os }}-playwright-${{ env.PLAYWRIGHT_VERSION }}
-
-        - name: install playwright browsers and dependencies
-          run: pnpm playwright install --with-deps
-          if: steps.playwright-cache.outputs.cache-hit != 'true'
-          shell: bash
-
-        - name: install playwright dependencies
-          run: pnpm playwright install-deps
-          if: steps.playwright-cache.outputs.cache-hit == 'true'
           shell: bash

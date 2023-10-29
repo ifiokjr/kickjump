@@ -48,6 +48,31 @@ jobs:
               run: build:kickjump_com
               shell: bash
 
+            - name: get installed playwright version
+              id: playwright-version
+              run: |
+                  TEMP_VERSION=`pnpm playwright -V | sed -e "s/Version //"`
+                  echo "PLAYWRIGHT_VERSION=$TEMP_VERSION" >> $GITHUB_ENV
+              shell: bash
+
+            - name: cache playwright binaries
+              uses: actions/cache@v3
+              id: playwright-cache
+              with:
+                  path: |
+                      ~/.cache/ms-playwright
+                  key: ${{ runner.os }}-playwright-${{ env.PLAYWRIGHT_VERSION }}
+
+            - name: install playwright browsers and dependencies
+              run: pnpm playwright install --with-deps
+              if: steps.playwright-cache.outputs.cache-hit != 'true'
+              shell: bash
+
+            - name: install playwright dependencies
+              run: pnpm playwright install-deps
+              if: steps.playwright-cache.outputs.cache-hit == 'true'
+              shell: bash
+
             - name: test
               run: test:kickjump_com
               shell: bash

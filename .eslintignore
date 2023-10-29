@@ -1,0 +1,9 @@
+.bin/**
+.cargo/**
+.devcontainer/**
+.devenv/**
+.direnv/**
+.local-cache/**
+**/public/**
+target/
+playwright-report/

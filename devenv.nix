@@ -7,7 +7,6 @@
     pkgs.cargo-make
     pkgs.cargo-nextest
     pkgs.cargo-run-bin
-    pkgs.cargo-watch
     pkgs.curl
     pkgs.dprint
     pkgs.fnm
@@ -17,7 +16,6 @@
     pkgs.wasm-pack
   ];
 
-  env.LEPTOS_TAILWIND_VERSION = "v3.3.5";
   env.POSTGRES_DB = "kj";
   env.POSTGRES_PASSWORD = "kj";
   env.POSTGRES_USER = "kj";
@@ -74,6 +72,7 @@
     set -e
     fix:clippy
     fix:format
+    fix:es
   '';
   scripts."fix:format".exec = ''
     set -e
@@ -83,10 +82,15 @@
     set -e
     cargo clippy --fix --allow-dirty --allow-staged
   '';
+  scripts."fix:es".exec = ''
+    set -e
+    pnpm eslint --ext=.tsx,.ts,.js . --fix
+  '';
   scripts."lint:all".exec = ''
     set -e
     lint:format
     lint:clippy
+    lint:es
   '';
   scripts."lint:format".exec = ''
     set -e
@@ -95,6 +99,10 @@
   scripts."lint:clippy".exec = ''
     set -e
     cargo clippy
+  '';
+  scripts."lint:es".exec = ''
+    set -e
+    pnpm eslint --ext=.tsx,.ts,.js .
   '';
   scripts."snapshot:review".exec = ''
     cargo insta review
@@ -107,7 +115,6 @@
     set -e
     test:cargo
     test:docs
-    test:kickjump_com
   '';
   scripts."test:cargo".exec = ''
     set -e
