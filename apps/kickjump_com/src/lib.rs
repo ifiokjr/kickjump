@@ -2,7 +2,9 @@ use cfg_if::cfg_if;
 pub mod app;
 mod components;
 pub mod error_template;
-pub mod fileserv;
+
+#[cfg(feature = "ssr")]
+pub mod server;
 
 cfg_if! {
 	if #[cfg(feature = "hydrate")] {

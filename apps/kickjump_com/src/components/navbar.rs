@@ -36,11 +36,13 @@ pub fn Navbar() -> impl IntoView {
 						</ul>
 					</details>
 				</li>
-				<li><a>"Item 3"</a></li>
+				<li>
+					<a>"Item 3"</a>
+				</li>
 			</ul>
 			</div>
 			<div class="navbar-end">
-				<a class="btn">"Button"</a>
+				<a class="btn" href="/login">"Login"</a>
 			</div>
 		</nav>
 	}

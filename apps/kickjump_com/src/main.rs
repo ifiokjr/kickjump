@@ -4,7 +4,10 @@ async fn main() {
 	use axum::routing::post;
 	use axum::Router;
 	use kickjump_com::app::*;
-	use kickjump_com::fileserv::file_and_error_handler;
+	use kickjump_com::server::fileserver::file_and_error_handler;
+	use kickjump_com::server::init_prisma_client;
+	use kickjump_com::server::server_fn_handler;
+	use kickjump_com::server::AppState;
 	use leptos::*;
 	use leptos_axum::generate_route_list;
 	use leptos_axum::LeptosRoutes;
@@ -21,13 +24,18 @@ async fn main() {
 	let leptos_options = conf.leptos_options;
 	let addr = leptos_options.site_addr;
 	let routes = generate_route_list(App);
+	let prisma_client = init_prisma_client().await;
+	let state = AppState {
+		leptos_options: leptos_options.clone(),
+		prisma_client: prisma_client.clone(),
+	};
 
 	// build our application with a route
 	let app = Router::new()
-		.route("/api/*fn_name", post(leptos_axum::handle_server_fns))
-		.leptos_routes(&leptos_options, routes, App)
+		.leptos_routes(&state, routes, App)
+		.route("/api/*fn_name", post(server_fn_handler))
 		.fallback(file_and_error_handler)
-		.with_state(leptos_options);
+		.with_state(state);
 
 	// run our app with hyper
 	// `axum::Server` is a re-export of `hyper::Server`

@@ -1,4 +1,11 @@
 {
+	"tailwindCSS.includeLanguages": {
+		"rust": "html"
+	},
+	"rust-analyzer.cargo.features": "all",
+	"[nix]": {
+		"editor.defaultFormatter": "dprint.dprint"
+	},
 	"[css]": {
 		"editor.defaultFormatter": "dprint.dprint"
 	},

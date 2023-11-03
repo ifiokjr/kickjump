@@ -31,3 +31,4 @@ node_modules/
 *.pem
 
 **/*.tsbuildinfo
+/prisma.db

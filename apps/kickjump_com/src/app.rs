@@ -12,6 +12,8 @@ mod l0_layout;
 mod l0_page;
 #[path = "./app/example/page.rs"]
 mod l1_page_example;
+#[path = "./app/login/page.rs"]
+mod l1_page_login;
 
 #[component]
 pub fn App() -> impl IntoView {
@@ -31,6 +33,7 @@ pub fn App() -> impl IntoView {
 					<Route path="/" view={l0_layout::MainLayout}>
 						<Route path="" view={l0_page::HomePage} />
 						<Route path="example" view={l1_page_example::ExamplePage} />
+						<Route path="login" view={l1_page_login::LoginPage} />
 					</Route>
 				</Routes>
 		</Router>

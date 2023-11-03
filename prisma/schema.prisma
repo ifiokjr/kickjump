@@ -1,68 +1,67 @@
 generator client {
-  provider = "cargo prisma"
-  output = "../crates/prisma_client/src/db.rs"
+  provider    = "cargo prisma"
+  output      = "../crates/prisma_client/src/db.rs"
   // https://prisma.brendonovich.dev/reading-data/select-include#setup
   module_path = "prisma_client::db"
 }
 
 datasource db {
   provider = "sqlite"
-  url = "file:../site.db"
+  url      = "file:../prisma.db"
 }
 
 model Account {
-  id String @id @default(cuid())
-  user_id String
-  type String
-  provider String
-  provider_account_id String
-  refresh_token String?
+  id                       String   @id @default(cuid())
+  user_id                  String
+  type                     String
+  provider                 String
+  provider_account_id      String
+  refresh_token            String?
   refresh_token_expires_in Int?
-  access_token String?
-  expires_at Int?
-  token_type String?
-  scope String?
-  id_token String?
-  session_state String?
-  oauth_token_secret String?
-  oauth_token String?
-  created_at DateTime  @default(now())
-  updated_at DateTime  @updatedAt
-  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  email Email?
+  access_token             String?
+  expires_at               Int?
+  token_type               String?
+  scope                    String?
+  id_token                 String?
+  session_state            String?
+  oauth_token_secret       String?
+  oauth_token              String?
+  created_at               DateTime @default(now())
+  updated_at               DateTime @updatedAt
+  user                     User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  email                    Email?
 
   @@unique([provider, provider_account_id])
   @@map("accounts")
 }
 
 model User {
-  id String @id @default(cuid())
-  name String?
-  image String?
-  accounts Account[]
-  emails Email[]
-  wallets UserWallet[]
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  id         String       @id @default(cuid())
+  name       String?
+  image      String?
+  accounts   Account[]
+  emails     Email[]
+  wallets    UserWallet[]
+  created_at DateTime     @default(now())
+  updated_at DateTime     @updatedAt
 
   @@map("users")
 }
 
 model Email {
-  email String @unique
-  created_at DateTime @default(now())
-  updated_at DateTime @updatedAt
+  email       String    @unique
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
   verified_at DateTime?
-  user_id String
-  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
-  account_id String? @unique
-  account Account? @relation(fields: [account_id], references: [id], onDelete: Cascade)
+  user_id     String
+  user        User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  account_id  String?   @unique
+  account     Account?  @relation(fields: [account_id], references: [id], onDelete: Cascade)
 }
 
-/// Each wallet can be attached to a maximum of one user.
 model UserWallet {
-  public_key String @unique
-  user_id String
-  created_at DateTime  @default(now())
-  user User @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  public_key String   @unique
+  user_id    String
+  created_at DateTime @default(now())
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
 }

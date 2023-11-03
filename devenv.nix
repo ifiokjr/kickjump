@@ -11,15 +11,15 @@
     pkgs.dprint
     pkgs.fnm
     pkgs.jq
-    pkgs.pulumi
+    pkgs.kubectl
     pkgs.rustup
-    pkgs.wasm-pack
   ];
 
   env.POSTGRES_DB = "kj";
   env.POSTGRES_PASSWORD = "kj";
   env.POSTGRES_USER = "kj";
   env.POSTGRES_PORT = 5433;
+  env.KUBECONFIG = "setup/.kube/config";
 
   services.postgres = {
     enable = true;
@@ -35,6 +35,8 @@
     install:pnpm
     install:cargo:bin
     install:solana
+    install:pulumi
+    install:esc
     prisma generate
   '';
   scripts."install:pnpm".exec = ''
@@ -44,8 +46,15 @@
   scripts."install:cargo:bin".exec = ''
     cargo bin --install
   '';
+  scripts."update:deps".exec = ''
+    cargo update
+    pnpm update --latest --recursive -i
+  '';
   scripts."anchor".exec = ''
     cargo bin anchor $@
+  '';
+  scripts."pulumi-resource-pulumi-nodejs".exec = ''
+    node_modules/@pulumi/pulumi/pulumi-resource-pulumi-nodejs $@
   '';
   scripts."leptos".exec = ''
     cargo bin leptos $@
@@ -62,11 +71,19 @@
   scripts."build:kickjump_com".exec = ''
     set -e
     pnpm tailwindcss -i ./apps/kickjump_com/style/input.css -o ./apps/kickjump_com/style/output.css --config ./apps/kickjump_com/tailwind.config.ts
-    cargo leptos build --release --project kickjump_com
+    cargo leptos build --project kickjump_com --release -vv
   '';
   scripts."serve:kickjump_com".exec = ''
     set -e
     cargo leptos serve --release --project kickjump_com
+  '';
+  scripts."prepare:kickjump_com".exec = ''
+    set -e
+    rm -rf dist/kickjump_com
+    mkdir -p dist/kickjump_com
+    cp target/release/kickjump_com dist/kickjump_com/run
+    cp -r target/site/kickjump_com dist/kickjump_com/site
+    cp -r apps/kickjump_com/Cargo.toml dist/kickjump_com
   '';
   scripts."fix:all".exec = ''
     set -e
@@ -138,6 +155,8 @@
     # update github ci path
     echo "$DEVENV_PROFILE/bin" >> $GITHUB_PATH
     echo "$GITHUB_WORKSPACE/.local-cache/solana-release/bin" >> $GITHUB_PATH
+    echo "$GITHUB_WORKSPACE/.local-cache/pulumi" >> $GITHUB_PATH
+    echo "$GITHUB_WORKSPACE/.local-cache/esc" >> $GITHUB_PATH
 
     # update github ci environment
     echo "DEVENV_PROFILE=$DEVENV_PROFILE" >> $GITHUB_ENV
@@ -175,7 +194,7 @@
   scripts."install:solana".exec = ''
     SOLANA_DOWNLOAD_ROOT="https://github.com/solana-labs/solana/releases/download"
     LOCAL_CACHE=.local-cache
-    SOLANA_VERSION=`cat ./setup/cache-versions.json | jq -r '.solana'`
+    VERSION=`cat ./setup/cache-versions.json | jq -r '.solana'`
     OS_TYPE="$(uname -s)"
     CPU_TYPE="$(uname -m)"
 
@@ -202,11 +221,94 @@
     then
       echo "Using cached solana release"
     else
-      DOWNLOAD_URL="$SOLANA_DOWNLOAD_ROOT/$SOLANA_VERSION/$TAR_PATH"
+      DOWNLOAD_URL="$SOLANA_DOWNLOAD_ROOT/$VERSION/$TAR_PATH"
       echo "Downloading $DOWNLOAD_URL to the local cache $FULL_TAR_PATH"
-      curl -sSfL "$DOWNLOAD_URL" -O
+      curl --header "Authorization: Bearer $GITHUB_TOKEN" -sSfL "$DOWNLOAD_URL" -O
       mv $TAR_PATH $FULL_TAR_PATH
       tar jxf $FULL_TAR_PATH -C $LOCAL_CACHE
+    fi
+  '';
+  scripts."install:pulumi".exec = ''
+    LOCAL_CACHE=.local-cache
+    VERSION=`cat ./setup/cache-versions.json | jq -r '.pulumi'`
+    OS_TYPE=""
+    case $(uname) in
+        "Linux") OS_TYPE="linux";;
+        "Darwin") OS_TYPE="darwin";;
+        *)
+            print_unsupported_platform
+            exit 1
+            ;;
+    esac
+
+    CPU_TYPE=""
+    case $(uname -m) in
+        "x86_64") CPU_TYPE="x64";;
+        "arm64") CPU_TYPE="arm64";;
+        "aarch64") CPU_TYPE="arm64";;
+        *)
+            print_unsupported_platform
+            exit 1
+            ;;
+    esac
+
+    TARBALL_URL="https://github.com/pulumi/pulumi/releases/download/$VERSION"
+    TARBALL_URL_FALLBACK="https://get.pulumi.com/releases/sdk/"
+    TARBALL_PATH=pulumi-$VERSION-$OS_TYPE-$CPU_TYPE.tar.gz
+    mkdir -p $LOCAL_CACHE
+    FULL_TARBALL_PATH="$LOCAL_CACHE/$TARBALL_PATH"
+
+    if [[ -e $FULL_TARBALL_PATH ]]
+    then
+      echo "Using cached pulumi release"
+    else
+      DOWNLOAD_URL="$TARBALL_URL/$TARBALL_PATH"
+      echo "Downloading $DOWNLOAD_URL to the local cache $FULL_TARBALL_PATH"
+      curl --header "Authorization: Bearer $GITHUB_TOKEN" -sSfL "$DOWNLOAD_URL" -O
+      mv $TARBALL_PATH $FULL_TARBALL_PATH
+      tar zxf $FULL_TARBALL_PATH -C $LOCAL_CACHE
+    fi
+
+  '';
+  scripts."install:esc".exec = ''
+    LOCAL_CACHE=.local-cache
+    VERSION=`cat ./setup/cache-versions.json | jq -r '.esc'`
+    OS_TYPE=""
+    case $(uname) in
+        "Linux") OS_TYPE="linux";;
+        "Darwin") OS_TYPE="darwin";;
+        *)
+            print_unsupported_platform
+            exit 1
+            ;;
+    esac
+
+    CPU_TYPE=""
+    case $(uname -m) in
+        "x86_64") CPU_TYPE="x64";;
+        "arm64") CPU_TYPE="arm64";;
+        "aarch64") CPU_TYPE="arm64";;
+        *)
+            print_unsupported_platform
+            exit 1
+            ;;
+    esac
+
+    TARBALL_URL="https://github.com/pulumi/esc/releases/download/$VERSION"
+    TARBALL_URL_FALLBACK="https://get.pulumi.com/esc/releases/"
+    TARBALL_PATH=esc-$VERSION-$OS_TYPE-$CPU_TYPE.tar.gz
+    mkdir -p $LOCAL_CACHE
+    FULL_TARBALL_PATH="$LOCAL_CACHE/$TARBALL_PATH"
+
+    if [[ -e $FULL_TARBALL_PATH ]]
+    then
+      echo "Using cached esc release"
+    else
+      DOWNLOAD_URL="$TARBALL_URL/$TARBALL_PATH"
+      echo "Downloading $DOWNLOAD_URL to the local cache $FULL_TARBALL_PATH"
+      curl --header "Authorization: Bearer $GITHUB_TOKEN" -sSfL "$DOWNLOAD_URL" -O
+      mv $TARBALL_PATH $FULL_TARBALL_PATH
+      tar zxf $FULL_TARBALL_PATH -C $LOCAL_CACHE
     fi
   '';
 }

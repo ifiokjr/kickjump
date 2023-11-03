@@ -1,0 +1,15 @@
+[package]
+name = "kj"
+version = { workspace = true }
+authors = { workspace = true }
+edition = { workspace = true }
+homepage = { workspace = true }
+license = { workspace = true }
+repository = { workspace = true }
+rust = { version.workspace = true }
+
+[dependencies]
+prisma-client-rust = { workspace = true }
+prisma_client = { workspace = true }
+serde = { workspace = true }
+tokio = { workspace = true }

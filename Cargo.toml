@@ -47,9 +47,9 @@ serde_json = "1"
 serde-wasm-bindgen = "0.6"
 similar-asserts = "1"
 simple_logger = "4"
-solana-client = "1.17.3"
-solana-program = "1.17.3"
-solana-sdk = "1.17.3"
+solana-client = "1.17"
+solana-program = "1.17"
+solana-sdk = "1.17"
 spl-token = "4"
 syn = "2"
 thiserror = "1"
@@ -69,4 +69,4 @@ prisma_cli = { path = "./crates/prisma_cli", version = "0.0.0" }
 
 [workspace.metadata.bin]
 anchor-cli = { version = "0.29.0", bins = ["anchor"] }
-cargo-leptos = { version = "0.2.0" }
+cargo-leptos = { version = "0.2.1", git = "https://github.com/leptos-rs/cargo-leptos", tag = "0.2.1" }

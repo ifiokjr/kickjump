@@ -1,0 +1,6 @@
+name: kj
+runtime:
+    name: nodejs
+    options:
+        nodeargs: "--import tsx"
+description: A minimal Kubernetes TypeScript Pulumi program

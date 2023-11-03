@@ -7,3 +7,4 @@
 **/public/**
 target/
 playwright-report/
+/dist
